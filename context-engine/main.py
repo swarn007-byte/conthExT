@@ -26,12 +26,45 @@ app.add_middleware(
 
 #phase 3 pydantic data models --tells about how incoming data structure should be
 
-class dataModels(BaseModel):
+class contextpayload(BaseModel):
     session_id: str = Field(..., description="unique indentifier")
     speaker: str = Field(..., description="user or agent")
     content: str = Field(..., description="the raw markdown")
     timestamp: Optional[str] = Field(None, description="Optional ISO timestamp string")
   
+#phase 4 - api endpoints and router setup
+@app.get("/")
+async def health(): # checks perception is alive 
+      return {
+        "status": "active",
+        "engine": "conthExT Perceptron",
+        "mode": "asynchronous_ingestion"
+    }
+
+@app.post("/api/v1/context/capture")
+async def capture_context(payload:contextpayload ,background_tasks:BackgroundTasks):
+    try:
+        BackgroundTasks.add_tasks(
+            ingest_event_to_vault,
+            source=payload.speaker,
+            content=payload.content,
+            timestamp_str=payload.timestamp
+        )
+        return {
+            "status":"queued",
+            "session_id":payload.session_id,
+            "message":"payload send to obsidion"
+        }
+    except exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to queue context payload: {str(e)}"
+        )
+    
+
+
+
+
 
 
 
