@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>conthExT — Obsidian memory layer for AI agents</title>
+    
+    <!-- Meta tags for SEO -->
+    <meta name="description" content="conthExT captures agent conversations into an Obsidian vault, searches the vault, and renders thread memory as a live graph for grounded AI workflows." />
+    <meta property="og:title" content="conthExT — Obsidian memory layer for AI agents" />
+    <meta property="og:description" content="Capture agent context into Obsidian and query it back through a local backend." />
+    <meta property="og:type" content="website" />
+    
+    <!-- Google Fonts: Inter and JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles/main.css?v=20260628-interactive-graph-2" />
+  </head>
+  <body>
+
+    <!-- Header / Navigation Bar -->
+    <header class="header-nav" id="header-nav">
+      <div class="nav-container">
+        <a class="nav-brand" href="#hero" id="nav-brand-link">
+          <img src="assets/logo.svg" alt="conthExT logo" class="nav-logo" />
+          <span class="nav-brand-text">conthExT</span>
+        </a>
+        
+        <nav class="nav-menu" id="nav-menu">
+          <a class="nav-link" href="#sandbox" id="nav-link-sandbox">Sandbox</a>
+          <a class="nav-link" href="#pipeline" id="nav-link-pipeline">Pipeline</a>
+          <a class="nav-link" href="#features" id="nav-link-features">Features</a>
+          <a class="nav-link" href="#comparison" id="nav-link-comparison">Comparison</a>
+          <a class="nav-link" href="#faq" id="nav-link-faq">FAQ</a>
+        </nav>
+
+        <div class="nav-actions">
+          <a href="#sandbox" class="nav-btn-primary" id="nav-btn-workspace" data-sandbox-launch>
+            Open Sandbox
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="arrow-icon">
+              <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+          <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle Menu" type="button">
+            <span class="menu-bar"></span>
+            <span class="menu-bar"></span>
+            <span class="menu-bar"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="sandbox-app-overlay" id="sandbox-app-overlay" aria-hidden="true">
+      <div class="sandbox-app-shell" role="dialog" aria-modal="true" aria-label="conthExT sandbox workspace">
+        <aside class="sandbox-app-sidebar">
+          <div class="sandbox-app-brand">
+            <img src="assets/logo.svg" alt="conthExT logo" class="sandbox-app-logo" />
+            <span>conthExT</span>
+          </div>
+          <button class="sandbox-home-button" type="button"><span class="sandbox-home-plus">+</span> Home</button>
+          <div class="sandbox-sidebar-section">
+            <div class="sandbox-sidebar-title font-mono">Threads</div>
+            <div class="sandbox-thread-list" id="sandbox-thread-list">
+              <button class="sandbox-thread-item active" type="button"><span>Frontend / Vault / Sandbox</span><small>live</small></button>
+              <button class="sandbox-thread-item" type="button"><span>Jwt / Token / Access</span><small>vault</small></button>
+              <button class="sandbox-thread-item" type="button"><span>React / Input / Box</span><small>vault</small></button>
+            </div>
+          </div>
+          <div class="sandbox-sidebar-stats font-mono" id="sandbox-sidebar-stats">
+            <div><strong>--</strong><span>threads</span></div>
+            <div><strong>--</strong><span>events</span></div>
+            <div><strong>--</strong><span>entities</span></div>
+          </div>
+        </aside>
+
+        <section class="sandbox-app-main">
+          <canvas id="sandbox-network-canvas" class="sandbox-network-canvas" aria-label="Interactive Obsidian vault network"></canvas>
+          <div class="sandbox-app-topbar">
+            <label class="sandbox-search-wrap" for="sandbox-global-search">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+                <path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <input id="sandbox-global-search" type="search" placeholder="Search threads" autocomplete="off" />
+            </label>
+            <div class="sandbox-top-actions">
+              <button class="sandbox-graph-toggle" id="sandbox-graph-toggle" type="button">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 7a3 3 0 1 0 .1 0M18 7a3 3 0 1 0 .1 0M12 17a3 3 0 1 0 .1 0M8.7 8.4h6.6M7.6 9.4l3 5.2M16.4 9.4l-3 5.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+                Memory Graph
+              </button>
+              <button class="sandbox-close-button" id="sandbox-close-button" type="button" aria-label="Close sandbox">×</button>
+            </div>
+          </div>
+
+          <div class="sandbox-workspace">
+            <div class="sandbox-command-center">
+              <span class="sandbox-live-pill font-mono"><span class="pulse-dot"></span> local vault online</span>
+              <h2>conthExT</h2>
+              <p>A context layer for AI agents. Query your Obsidian memory, capture new thoughts, and inspect the graph.</p>
+              <div class="sandbox-selected-context font-mono" id="sandbox-selected-context">No thread selected · click any graph node</div>
+              <form class="sandbox-ask-form" id="sandbox-ask-form">
+                <label class="sandbox-thread-select-wrap" for="sandbox-thread-select">
+                  <span class="font-mono">Thread</span>
+                  <select id="sandbox-thread-select">
+                    <option value="">Auto select</option>
+                  </select>
+                </label>
+                <input id="sandbox-ask-input" type="text" placeholder="Ask conthExT anything about your work..." autocomplete="off" />
+                <button type="submit" aria-label="Ask vault">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+
+            <div class="sandbox-response-strip hidden" id="sandbox-response-strip">
+              <div class="sandbox-response-label font-mono" id="sandbox-response-label">Vault Answer</div>
+              <p id="sandbox-response-text"></p>
+              <div class="sandbox-response-citations" id="sandbox-response-citations"></div>
+            </div>
+
+            <div class="sandbox-recent-head">
+              <span class="font-mono">Recent Threads</span>
+              <span>Most recently updated work</span>
+            </div>
+            <div class="sandbox-recent-grid" id="sandbox-recent-grid">
+              <article class="sandbox-thread-card"><h3>Frontend / Vault / Sandbox</h3><p>Live local sandbox for capturing context into the Obsidian vault.</p><div><span>thread</span><small>now</small></div></article>
+              <article class="sandbox-thread-card"><h3>Jwt / Token / Access</h3><p>Authentication overview, access token and refresh token notes.</p><div><span>thread</span><small>vault</small></div></article>
+              <article class="sandbox-thread-card"><h3>React / Input / Box</h3><p>Controlled component notes and input state debugging context.</p><div><span>thread</span><small>vault</small></div></article>
+            </div>
+          </div>
+        </section>
+
+        <aside class="sandbox-graph-drawer" id="sandbox-graph-drawer" aria-hidden="true">
+          <div class="sandbox-graph-head">
+            <div><span class="font-mono">Memory Graph</span><p>Threads, captured events, and linked concepts.</p></div>
+            <button id="sandbox-graph-close" type="button" aria-label="Close memory graph">×</button>
+          </div>
+          <div class="sandbox-mini-graph" id="sandbox-mini-graph">
+            <span class="mini-node node-thread">Thread</span>
+            <span class="mini-node node-event">Event</span>
+            <span class="mini-node node-entity">Concept</span>
+            <span class="mini-edge edge-a"></span>
+            <span class="mini-edge edge-b"></span>
+          </div>
+          <div class="sandbox-graph-list" id="sandbox-graph-list"></div>
+        </aside>
+      </div>
+    </div>
+
+    <main>
+      
+      <!-- Hero Section -->
+      <section class="hero-section" id="hero">
+        <div class="hero-container">
+          <span class="hero-badge" id="hero-badge-status">
+            <span class="pulse-dot"></span>
+            Local Obsidian memory layer for AI agents
+          </span>
+          
+          <h1 class="hero-title" id="hero-title-main">
+            Talk to your vault.<br />
+            <span class="gradient-text">conthExT keeps the memory underneath.</span>
+          </h1>
+          
+          <p class="hero-subtitle" id="hero-subtitle-desc">
+            A local agent surface for capturing Claude-style conversations, writing them into Obsidian, and retrieving the right threads when your next AI session needs memory.
+          </p>
+          
+          <div class="hero-actions" id="hero-cta-buttons">
+            <a href="#sandbox" class="btn-primary" id="hero-btn-primary" data-sandbox-launch>
+              Open Live Sandbox
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="arrow-icon">
+                <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+            <a href="#pipeline" class="btn-secondary" id="hero-btn-secondary">
+              See the flow
+            </a>
+          </div>
+
+          <div class="hero-stats" id="hero-stats-row">
+            <div class="stat-item">
+              <span class="stat-number">Vault</span>
+              <span class="stat-label">Obsidian First</span>
+            </div>
+            <div class="stat-item border-left">
+              <span class="stat-number">FastAPI</span>
+              <span class="stat-label">Local Backend</span>
+            </div>
+            <div class="stat-item border-left">
+              <span class="stat-number">MCP</span>
+              <span class="stat-label">Tool Ready</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Proof & Interactive Sandbox (Main Visualization Dashboard) -->
+      <section class="sandbox-section" id="sandbox">
+        <div class="sandbox-container">
+          <div class="section-header">
+            <span class="section-eyebrow">Live Sandbox</span>
+            <h2 class="section-title">Capture context, then pull it back from the vault.</h2>
+            <p class="section-subtitle">
+              Send a user or agent message into the backend, write it to Obsidian, search existing notes, and inspect the thread graph generated from your actual markdown files.
+            </p>
+          </div>
+
+          <div class="dashboard-grid">
+            
+            <!-- Left: Simulated Telemetry Console -->
+            <div class="dashboard-panel console-panel" id="console-panel">
+              <div class="panel-header">
+                <div class="window-controls">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="panel-tab font-mono">conthext-vault@local</div>
+              </div>
+              
+              <div class="console-body">
+                <div class="console-intro font-mono">
+                  <p class="text-muted">// conthExT backend expected on http://127.0.0.1:8000</p>
+                  <p class="text-muted">// Connected vault: my-knowledge-vault / Threads + Concepts</p>
+                  <p class="text-success">// Status: READY. Capture context or query the vault below.</p>
+                </div>
+                
+                <div class="console-terminal font-mono" id="terminal-feed">
+                  <!-- Realtime streaming logs will print here -->
+                  <div class="terminal-prompt-line">
+                    <span class="prompt-symbol">$</span> <span class="typing-target">Write a memory event or select a vault query...</span>
+                  </div>
+                </div>
+
+                <div class="terminal-output-card hidden" id="terminal-response-card">
+                  <div class="card-title font-mono"><span class="badge badge-indigo" id="terminal-response-mode">Retrieved Answer</span></div>
+                  <p class="card-text" id="terminal-response-body">Response text will stream here...</p>
+                  <div class="card-citations" id="terminal-response-citations">
+                    <!-- Citation chips -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="console-footer">
+                <div class="query-options">
+                  <form class="capture-form" id="capture-form">
+                    <div class="capture-form-row">
+                      <label class="field-label font-mono" for="session-id-input">Thread</label>
+                      <input id="session-id-input" class="capture-input font-mono" value="frontend-2026-06-27" autocomplete="off" />
+                      <label class="field-label font-mono" for="speaker-select">Speaker</label>
+                      <select id="speaker-select" class="capture-select font-mono">
+                        <option value="user">user</option>
+                        <option value="agent">agent</option>
+                      </select>
+                    </div>
+                    <textarea id="capture-content" class="capture-textarea" rows="3" placeholder="Drop a thought, decision, bug, or agent reply. It will be appended to the matching Obsidian thread."></textarea>
+                    <button class="btn-capture" type="submit">Capture to Vault</button>
+                  </form>
+                  <span class="query-options-title font-mono">Query the vault:</span>
+                  <div class="query-buttons">
+                    <button class="btn-query-preset" data-query-id="jwt-bug" type="button">
+                      "What was the JWT auth bug?"
+                    </button>
+                    <button class="btn-query-preset" data-query-id="react-state" type="button">
+                      "Explain the React controlled inputs issue"
+                    </button>
+                    <button class="btn-query-preset" data-query-id="startup-pitch" type="button">
+                      "What was in the frontend thread?"
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Interactive Canvas Memory Graph -->
+            <div class="dashboard-panel graph-panel" id="graph-panel">
+              <div class="panel-header">
+                <span class="panel-title font-mono">obsidian_vault_graph.json</span>
+                <div class="graph-actions">
+                  <button class="btn-graph-action" id="btn-reheat-graph" title="Reheat Simulation" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon">
+                      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                    </svg>
+                    <span>Reheat</span>
+                  </button>
+                  <button class="btn-graph-action" id="btn-zoom-fit" title="Zoom Out" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      <line x1="8" y1="11" x2="14" y2="11" />
+                    </svg>
+                    <span>Zoom Out</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="graph-canvas-container" id="graph-canvas-wrapper">
+                <canvas id="graph-canvas"></canvas>
+                
+                <!-- Custom Canvas Tooltip -->
+                <div class="canvas-tooltip hidden" id="canvas-tooltip">
+                  <div class="tooltip-head">
+                    <span class="tooltip-source-pill" id="tooltip-source">chatgpt</span>
+                    <span class="tooltip-type-pill" id="tooltip-type">Event</span>
+                  </div>
+                  <h4 class="tooltip-content" id="tooltip-content">React state and controlled components explained in tutorial.</h4>
+                  <p class="tooltip-time" id="tooltip-time">2026-05-02 13:08</p>
+                </div>
+
+                <!-- Graph Node Details Side Drawer -->
+                <div class="graph-detail-overlay hidden" id="graph-detail-overlay">
+                  <button class="btn-close-detail" id="btn-close-detail" type="button">&times;</button>
+                  <div class="detail-content" id="detail-content">
+                    <span class="detail-label font-mono">Entity Selected</span>
+                    <h3 class="detail-title">jwt</h3>
+                    <div class="detail-meta font-mono">Connected to 3 events &bull; 1 thread</div>
+                    <div class="detail-description">
+                      JWT authentication, tokens, and verification processes found in work history.
+                    </div>
+                    <div class="detail-list-section">
+                      <span class="detail-list-title font-mono">Linked Threads</span>
+                      <ul class="detail-list" id="detail-threads-list">
+                        <li>JWT Authentication Flow</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="graph-footer">
+                <div class="graph-legend font-mono">
+                  <span class="legend-item"><span class="legend-dot dot-thread"></span> Thread</span>
+                  <span class="legend-item"><span class="legend-dot dot-entity"></span> Entity</span>
+                  <span class="legend-item"><span class="legend-dot dot-event"></span> Event</span>
+                </div>
+                <div class="graph-instruction font-mono text-muted">
+                  Drag nodes to adjust. Scroll to zoom. Hover for details. Click for synapses.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Dynamic Animated Ingestion Pipeline -->
+      <section class="pipeline-section" id="pipeline">
+        <div class="pipeline-container">
+          <div class="section-header">
+            <span class="section-eyebrow">System Architecture</span>
+            <h2 class="section-title">The Ingestion Pipeline</h2>
+            <p class="section-subtitle">
+              Watch how Claude-style messages move through the local backend, land inside Obsidian, and become queryable vault memory.
+            </p>
+          </div>
+
+          <div class="pipeline-diagram-card">
+            <!-- Animated SVG Flowchart -->
+            <svg class="pipeline-svg" id="pipeline-svg" viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <!-- Gradients for Pipeline boxes -->
+                <linearGradient id="boxGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#141414" />
+                  <stop offset="100%" stop-color="#0a0a0a" />
+                </linearGradient>
+                <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8a85f4" />
+                  <stop offset="100%" stop-color="#6f6bd9" />
+                </linearGradient>
+                <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981" />
+                  <stop offset="100%" stop-color="#059669" />
+                </linearGradient>
+                
+                <!-- Markers for connections -->
+                <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#262626" />
+                </marker>
+                <marker id="arrowhead-highlight" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#6f6bd9" />
+                </marker>
+                
+                <!-- Glow Filters -->
+                <filter id="svgGlow" x="-10%" y="-10%" width="120%" height="120%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+
+              <!-- Source Nodes (Claude, MCP, Obsidian, Frontend) -->
+              <g class="pipeline-node-group" id="group-sources" transform="translate(10, 0)">
+                <rect class="pipeline-rect" x="30" y="30" width="120" height="50" rx="8" fill="url(#boxGrad)" stroke="#262626" stroke-width="1.5" />
+                <text x="90" y="60" class="svg-text font-mono text-center" fill="#fafafa">Claude</text>
+
+                <rect class="pipeline-rect" x="30" y="120" width="120" height="50" rx="8" fill="url(#boxGrad)" stroke="#262626" stroke-width="1.5" />
+                <text x="90" y="150" class="svg-text font-mono text-center" fill="#fafafa">MCP</text>
+
+                <rect class="pipeline-rect" x="30" y="210" width="120" height="50" rx="8" fill="url(#boxGrad)" stroke="#262626" stroke-width="1.5" />
+                <text x="90" y="240" class="svg-text font-mono text-center" fill="#fafafa">Obsidian</text>
+
+                <rect class="pipeline-rect" x="30" y="300" width="120" height="50" rx="8" fill="url(#boxGrad)" stroke="#262626" stroke-width="1.5" />
+                <text x="90" y="330" class="svg-text font-mono text-center" fill="#fafafa">Frontend</text>
+              </g>
+
+              <!-- Connection Paths: Sources to Ingest -->
+              <path class="flow-path" id="path-gpt-ingest" d="M 160 55 C 220 55, 200 200, 260 200" fill="none" stroke="#1f1f1f" stroke-width="1.5" marker-end="url(#arrowhead)" />
+              <path class="flow-path" id="path-github-ingest" d="M 160 145 C 220 145, 200 200, 260 200" fill="none" stroke="#1f1f1f" stroke-width="1.5" marker-end="url(#arrowhead)" />
+              <path class="flow-path" id="path-notion-ingest" d="M 160 235 C 220 235, 200 200, 260 200" fill="none" stroke="#1f1f1f" stroke-width="1.5" marker-end="url(#arrowhead)" />
+              <path class="flow-path" id="path-yt-ingest" d="M 160 325 C 220 325, 200 200, 260 200" fill="none" stroke="#1f1f1f" stroke-width="1.5" marker-end="url(#arrowhead)" />
+
+              <!-- Ingestion Box -->
+              <g class="pipeline-stage-group" id="stage-ingestion" transform="translate(270, 160)">
+                <rect class="stage-rect" x="0" y="0" width="130" height="80" rx="10" fill="url(#boxGrad)" stroke="#262626" stroke-width="1.5" />
+                <text x="65" y="38" class="svg-stage-title font-sans" fill="#fafafa" text-anchor="middle" font-weight="600">Ingest</text>
+                <text x="65" y="58" class="svg-stage-sub font-mono" fill="#a1a1aa" text-anchor="middle" font-size="10">Capture Payload</text>
+              </g>
+
+              <line class="flow-path" id="path-ingest-extract" x1="400" y1="200" x2="460" y2="200" stroke="#1f1f1f" stroke-width="1.5" marker-end="url(#arrowhead)" />
+
+              <!-- Extract Signals Box -->
+              <g class="pipeline-stage-group" id="stage-extraction" transform="translate(470, 160)">
+                <rect class="stage-rect" x="0" y="0" width="130" height="80" rx="10" fill="url(#boxGrad)" stroke="#262626" stroke-width="1.5" />
+                <text x="65" y="38" class="svg-stage-title font-sans" fill="#fafafa" text-anchor="middle" font-weight="600">Extract</text>
+                <text x="65" y="58" class="svg-stage-sub font-mono" fill="#a1a1aa" text-anchor="middle" font-size="10">Read Markdown</text>
+              </g>
+
+              <line class="flow-path" id="path-extract-cluster" x1="600" y1="200" x2="660" y2="200" stroke="#1f1f1f" stroke-width="1.5" marker-end="url(#arrowhead)" />
+
+              <!-- Clustering Threads Box -->
+              <g class="pipeline-stage-group" id="stage-clustering" transform="translate(670, 160)">
+                <rect class="stage-rect highlight" x="0" y="0" width="130" height="80" rx="10" fill="url(#boxGrad)" stroke="#6f6bd9" stroke-width="1.5" stroke-opacity="0.5" />
+                <text x="65" y="38" class="svg-stage-title font-sans color-purple" fill="#8a85f4" text-anchor="middle" font-weight="600">Vault</text>
+                <text x="65" y="58" class="svg-stage-sub font-mono" fill="#a1a1aa" text-anchor="middle" font-size="10">Threads + Concepts</text>
+              </g>
+
+              <line class="flow-path" id="path-cluster-agent" x1="800" y1="200" x2="860" y2="200" stroke="#1f1f1f" stroke-width="1.5" marker-end="url(#arrowhead)" />
+
+              <!-- Output Node (AI Agent) -->
+              <g class="pipeline-node-group" id="group-agent" transform="translate(870, 160)">
+                <circle cx="45" cy="40" r="35" fill="#15151a" stroke="#262626" stroke-width="2" />
+                <text x="45" y="38" class="svg-text font-sans text-center" fill="#fafafa" font-weight="600" text-anchor="middle">AI</text>
+                <text x="45" y="53" class="svg-text font-mono text-center" fill="#a1a1aa" font-size="9" text-anchor="middle">Agent</text>
+              </g>
+
+              <!-- Dynamic glowing animation particles (created/controlled dynamically via Javascript) -->
+              <g id="particles-container"></g>
+            </svg>
+          </div>
+          
+          <div class="pipeline-caption font-mono text-muted text-center">
+            [conthExT Flow] Frontend or Claude sends ContextPayload &rarr; FastAPI queues processing &rarr; Obsidian Threads/Concepts store memory &rarr; Vault graph grounds the next answer.
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Grid Section -->
+      <section class="features-section" id="features">
+        <div class="features-container">
+          <div class="section-header">
+            <span class="section-eyebrow">Product Capabilities</span>
+            <h2 class="section-title">A frontend for the memory you already own.</h2>
+            <p class="section-subtitle">
+              The UI sits on top of your local backend and vault, turning raw markdown threads into a usable agent workspace.
+            </p>
+          </div>
+
+          <div class="features-grid">
+            <!-- Feature Card 1 -->
+            <div class="feature-card card-hover">
+              <div class="feature-icon-container">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-svg">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
+              <h3 class="feature-card-title">Cross-Tool Persistence</h3>
+              <p class="feature-card-desc">
+                Captures user and agent messages through a simple API and persists them as readable Obsidian markdown.
+              </p>
+            </div>
+
+            <!-- Feature Card 2 -->
+            <div class="feature-card card-hover">
+              <div class="feature-icon-container">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-svg">
+                  <line x1="6" y1="3" x2="6" y2="15" />
+                  <circle cx="18" cy="6" r="3" />
+                  <circle cx="6" cy="18" r="3" />
+                  <path d="M18 9a9 9 0 0 1-9 9" />
+                </svg>
+              </div>
+              <h3 class="feature-card-title">Temporal Thread Clustering</h3>
+              <p class="feature-card-desc">
+                Keeps every session inside a named thread so old decisions, bugs, and explanations remain easy to retrieve.
+              </p>
+            </div>
+
+            <!-- Feature Card 3 -->
+            <div class="feature-card card-hover">
+              <div class="feature-icon-container">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-svg">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                  <polyline points="2 17 12 22 22 17" />
+                  <polyline points="2 12 12 17 22 12" />
+                </svg>
+              </div>
+              <h3 class="feature-card-title">Entity Synapse Extraction</h3>
+              <p class="feature-card-desc">
+                Turns thread notes, wiki-links, and concepts into graph nodes that the sandbox can search and focus visually.
+              </p>
+            </div>
+
+            <!-- Feature Card 4 -->
+            <div class="feature-card card-hover">
+              <div class="feature-icon-container">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-svg">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <h3 class="feature-card-title">Citation-Backed Grounding</h3>
+              <p class="feature-card-desc">
+                Every sandbox answer points back to the matching vault note instead of pretending memory appeared from nowhere.
+              </p>
+            </div>
+
+            <!-- Feature Card 5 -->
+            <div class="feature-card card-hover">
+              <div class="feature-icon-container">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-svg">
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                  <line x1="6" y1="6" x2="6.01" y2="6" />
+                  <line x1="6" y1="18" x2="6.01" y2="18" />
+                </svg>
+              </div>
+              <h3 class="feature-card-title">Model-Agnostic Interface</h3>
+              <p class="feature-card-desc">
+                Built around REST today and ready for Claude/Anthropic tool-calling or MCP-backed vault operations next.
+              </p>
+            </div>
+
+            <!-- Feature Card 6 -->
+            <div class="feature-card card-hover">
+              <div class="feature-icon-container">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feature-svg">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <h3 class="feature-card-title">Zero Surprise Costs</h3>
+              <p class="feature-card-desc">
+                Runs locally against filesystem markdown. No external vector store is required for the current sandbox loop.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Architecture Comparison Section -->
+      <section class="comparison-section" id="comparison">
+        <div class="comparison-container">
+          <div class="section-header">
+            <span class="section-eyebrow">Comparison Matrix</span>
+            <h2 class="section-title">Why vault-native memory is the right first layer.</h2>
+            <p class="section-subtitle">
+              Before expensive RAG, conthExT gives agents durable local memory with thread names, timestamps, markdown, and visible citations.
+            </p>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th class="text-left font-mono">Vector / Context Specs</th>
+                  <th class="th-other">Standard Chat History</th>
+                  <th class="th-other">Vector RAG Databases</th>
+                  <th class="th-meniscus font-mono">conthExT Vault Layer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="td-spec text-left">Scope Limit</td>
+                  <td>Single chat tab session</td>
+                  <td>Global text repository</td>
+                  <td class="td-highlight">Local Obsidian vault</td>
+                </tr>
+                <tr>
+                  <td class="td-spec text-left">Structure</td>
+                  <td>Chronological array of raw strings</td>
+                  <td>Unconnected floating embedding vectors</td>
+                  <td class="td-highlight">Concept &rarr; Event &rarr; Thread graph</td>
+                </tr>
+                <tr>
+                  <td class="td-spec text-left">Retrieval Precision</td>
+                  <td>Last 20 messages (sliding window)</td>
+                  <td>Isolated matching text chunks</td>
+                  <td class="td-highlight">Thread-focused vault retrieval</td>
+                </tr>
+                <tr>
+                  <td class="td-spec text-left">Citation Quality</td>
+                  <td>None (hallucination prone)</td>
+                  <td>Page URL / file name only</td>
+                  <td class="td-highlight">Markdown note citations</td>
+                </tr>
+                <tr>
+                  <td class="td-spec text-left">Local Compute</td>
+                  <td>Browser memory only</td>
+                  <td>Requires heavy local vectors / GPU</td>
+                  <td class="td-highlight">Runs on local files + FastAPI</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Accordion FAQ Section -->
+      <section class="faq-section" id="faq">
+        <div class="faq-container">
+          <div class="section-header">
+            <span class="section-eyebrow">Frequently Asked</span>
+            <h2 class="section-title">Common Questions</h2>
+            <p class="section-subtitle">
+              Have questions about security, hosting, or how the clustering works? We have answers.
+            </p>
+          </div>
+
+          <div class="faq-accordion-group">
+            <!-- FAQ Item 1 -->
+            <div class="faq-item" id="faq-item-1">
+              <button class="faq-trigger" aria-expanded="false" type="button" aria-controls="faq-answer-1">
+                <span>How does the temporal clustering algorithm work?</span>
+                <span class="faq-icon-plus"></span>
+              </button>
+              <div class="faq-answer" id="faq-answer-1" hidden>
+                <div class="faq-answer-content">
+                  The current backend writes each capture into a named Obsidian thread. The graph endpoint reads those markdown files, splits captured entries into events, and connects wiki-links or concepts as entity nodes.
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Item 2 -->
+            <div class="faq-item" id="faq-item-2">
+              <button class="faq-trigger" aria-expanded="false" type="button" aria-controls="faq-answer-2">
+                <span>Is my activity data sent to third-party servers?</span>
+                <span class="faq-icon-plus"></span>
+              </button>
+              <div class="faq-answer" id="faq-answer-2" hidden>
+                <div class="faq-answer-content">
+                  The current sandbox runs locally and writes to your filesystem vault. Model calls are not wired into this frontend yet; the next step is adding an Anthropic/OpenAI agent layer that can call these same vault tools.
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Item 3 -->
+            <div class="faq-item" id="faq-item-3">
+              <button class="faq-trigger" aria-expanded="false" type="button" aria-controls="faq-answer-3">
+                <span>How can I ingest custom events from new sources?</span>
+                <span class="faq-icon-plus"></span>
+              </button>
+              <div class="faq-answer" id="faq-answer-3" hidden>
+                <div class="faq-answer-content">
+                  conthExT exposes <code>/api/v1/context/capture</code>. Send <code>{session_id, speaker, content, timestamp}</code> and the backend appends it to <code>my-knowledge-vault/Threads</code>.
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Item 4 -->
+            <div class="faq-item" id="faq-item-4">
+              <button class="faq-trigger" aria-expanded="false" type="button" aria-controls="faq-answer-4">
+                <span>How does this compare to standard vector search RAG?</span>
+                <span class="faq-icon-plus"></span>
+              </button>
+              <div class="faq-answer" id="faq-answer-4" hidden>
+                <div class="faq-answer-content">
+                  Vector search can come later. This layer first preserves the human-readable source of truth: exact thread notes, captured entries, and Obsidian links that an agent can inspect before answering.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final CTA Section -->
+      <section class="cta-section" id="cta-cta">
+        <div class="cta-container">
+          <h2 class="cta-title">Open the vault sandbox.</h2>
+          <p class="cta-subtitle">
+            Capture a message, search a thread, and watch your Obsidian memory turn into an interactive graph.
+          </p>
+          <a href="#sandbox" class="btn-primary" id="cta-btn-primary">
+            Open Interactive Workspace
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="arrow-icon">
+              <path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-nav" id="footer-section">
+      <div class="footer-container">
+        <div class="footer-columns">
+          
+          <div class="footer-brand-column">
+            <div class="footer-brand font-mono">
+              <img src="assets/logo.svg" alt="conthExT logo" class="footer-logo" />
+              conthExT
+            </div>
+            <p class="footer-desc text-muted">
+              Local Obsidian memory for Claude-style agents, tool-calling backends, and readable context trails.
+            </p>
+          </div>
+
+          <div class="footer-links-column">
+            <div class="footer-col-title font-mono">Product</div>
+            <ul class="footer-links-list">
+              <li><a href="#sandbox" class="footer-link">Sandbox</a></li>
+              <li><a href="#pipeline" class="footer-link">Pipeline</a></li>
+              <li><a href="#features" class="footer-link">Features</a></li>
+              <li><a href="#comparison" class="footer-link">Comparison</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-links-column">
+            <div class="footer-col-title font-mono">Reference</div>
+            <ul class="footer-links-list">
+              <li><a href="#pipeline" class="footer-link">Backend Flow</a></li>
+              <li><a href="#sandbox" class="footer-link">Vault Sandbox</a></li>
+              <li><a href="#faq" class="footer-link">API Notes</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-links-column">
+            <div class="footer-col-title font-mono">Community</div>
+            <ul class="footer-links-list">
+              <li><a href="https://github.com/swarn007-byte/conthExT" target="_blank" rel="noreferrer" class="footer-link">Repository</a></li>
+              <li><a href="#sandbox" class="footer-link">Local App</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-links-column">
+            <div class="footer-col-title font-mono">Legal</div>
+            <ul class="footer-links-list">
+              <li><a href="#faq" class="footer-link">Privacy Policy</a></li>
+              <li><a href="#faq" class="footer-link">Terms of Service</a></li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div class="footer-bottom font-mono text-muted">
+          <div>© 2026 conthExT. Local-first vault memory interface.</div>
+          <div class="footer-bottom-links">
+            <a href="#hero">Back to top</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="scripts/main.js?v=20260628-interactive-graph-2"></script>
+    <script src="scripts/graph.js?v=20260628-interactive-graph-2"></script>
+    <script src="scripts/pipeline.js?v=20260628-interactive-graph-2"></script>
+    <script src="scripts/telemetry.js?v=20260628-interactive-graph-2"></script>
+  </body>
+</html>
